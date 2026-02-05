@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI Transliterator Settings</title>
+  <link rel="stylesheet" href="options-base.css">
+  <link rel="stylesheet" href="options-components.css">
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1>⚙️ Extension Settings</h1>
+      <p class="subtitle">Configure your AI API credentials</p>
+    </header>
+    
+    <main class="settings-form">
+      <section class="form-section">
+        <h2>API Configuration</h2>
+        
+        <div class="form-group">
+          <label for="api-url">API URL</label>
+          <input type="url" id="api-url" placeholder="https://api.openai.com/v1/chat/completions">
+          <span class="hint">Your LLM API endpoint (OpenAI-compatible)</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="api-key">API Key</label>
+          <div class="input-with-toggle">
+            <input type="password" id="api-key" placeholder="sk-...">
+            <button type="button" class="toggle-visibility" id="toggle-key">👁️</button>
+          </div>
+          <span class="hint">Your API key will be encrypted</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="api-model">Model Name</label>
+          <input type="text" id="api-model" placeholder="openai/gpt-3.5-turbo">
+          <span class="hint">e.g., openai/gpt-3.5-turbo, anthropic/claude-3-opus, google/gemini-pro</span>
+        </div>
+      </section>
+      
+      <section class="form-section">
+        <h2>OpenRouter Settings (Optional)</h2>
+        
+        <div class="form-group">
+          <label for="http-referer">HTTP Referer</label>
+          <input type="url" id="http-referer" placeholder="https://your-site.com">
+          <span class="hint">Site URL for rankings on openrouter.ai (optional)</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="x-title">Site Title</label>
+          <input type="text" id="x-title" placeholder="AI Transliterator">
+          <span class="hint">Site title for rankings on openrouter.ai (optional)</span>
+        </div>
+      </section>
+      
+      <section class="form-section">
+        <h2>Security</h2>
+        
+        <div class="form-group">
+          <label for="encryption-key">Encryption Passphrase</label>
+          <div class="input-with-toggle">
+            <input type="password" id="encryption-key" placeholder="Create a secure passphrase">
+            <button type="button" class="toggle-visibility" id="toggle-encryption">👁️</button>
+          </div>
+          <span class="hint">Used to encrypt your credentials (keep this safe!)</span>
+        </div>
+        
+        <div class="security-info">
+          <div class="info-card">
+            <span class="info-icon">🔒</span>
+            <div class="info-content">
+              <h4>ScriptCipher Encryption</h4>
+              <p>Your credentials are encrypted using a proprietary algorithm before storage.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <section class="form-section">
+        <h2>Language Settings</h2>
+        
+        <div class="form-group">
+          <label for="default-language">Default Target Language</label>
+          <select id="default-language">
+            <option value="fa">Persian (فارسی)</option>
+          </select>
+          <span class="hint">More languages coming soon!</span>
+        </div>
+      </section>
+      
+      <div class="storage-status" id="storage-status" style="display: none;">
+        <span class="status-icon">⚠️</span>
+        <span class="status-text">No settings found. Please configure below.</span>
+      </div>
+      
+      <div class="form-actions">
+        <button id="save-btn" class="primary-btn">💾 Save Settings</button>
+        <button id="test-btn" class="secondary-btn">🧪 Test Connection</button>
+        <button id="clear-btn" class="secondary-btn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444;">🗑️ Clear All</button>
+      </div>
+      
+      <div id="status-message" class="status-message"></div>
+    </main>
+  </div>
+  
+  <script type="module" src="options.js"></script>
+</body>
+</html>
