@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Transliterator & ASCII Art",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Transliterate Latin text to Persian and generate ASCII art with AI",
   "permissions": [
     "storage",
