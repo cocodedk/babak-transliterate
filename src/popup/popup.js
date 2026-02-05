@@ -72,9 +72,12 @@ class PopupApp {
           // Show error
           this.showErrorRequest(data);
           await chrome.runtime.sendMessage({ action: 'clear-pending-request', requestId });
+        } else if (data.status === 'cancelled') {
+          this.showCancelledRequest(data);
+          await chrome.runtime.sendMessage({ action: 'clear-pending-request', requestId });
         } else if (data.status === 'pending') {
           // Request still in progress, show loading state
-          this.showPendingRequest(data);
+          this.showPendingRequest(requestId, data);
         }
       }
     } catch (err) {
@@ -93,6 +96,7 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('transliterate-status', '', false);
+      this.clearActiveRequest('transliterate');
     } else if (data.type === 'ascii') {
       const input = document.getElementById('ascii-input');
       const output = document.getElementById('ascii-result');
@@ -103,6 +107,7 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('ascii-status', '', false);
+      this.clearActiveRequest('ascii');
     }
     // Refresh history to show the new entry
     this.history.refresh();
@@ -118,6 +123,7 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('transliterate-status', '', false);
+      this.clearActiveRequest('transliterate');
       setTimeout(() => output.style.color = '', 3000);
     } else if (data.type === 'ascii') {
       const output = document.getElementById('ascii-result');
@@ -128,11 +134,34 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('ascii-status', '', false);
+      this.clearActiveRequest('ascii');
       setTimeout(() => output.style.color = '', 3000);
     }
   }
 
-  showPendingRequest(data) {
+  showCancelledRequest(data) {
+    if (data.type === 'transliterate') {
+      const output = document.getElementById('transliterate-result');
+      const area = document.getElementById('transliterate-result-area');
+      
+      output.textContent = 'Cancelled.';
+      area.classList.remove('hidden');
+      area.setAttribute('aria-busy', 'false');
+      this.setResultStatus('transliterate-status', 'Cancelled', false);
+      this.clearActiveRequest('transliterate');
+    } else if (data.type === 'ascii') {
+      const output = document.getElementById('ascii-result');
+      const area = document.getElementById('result-area');
+      
+      output.textContent = 'Cancelled.';
+      area.classList.remove('hidden');
+      area.setAttribute('aria-busy', 'false');
+      this.setResultStatus('ascii-status', 'Cancelled', false);
+      this.clearActiveRequest('ascii');
+    }
+  }
+
+  showPendingRequest(requestId, data) {
     if (data.type === 'transliterate') {
       const input = document.getElementById('transliterate-input');
       const btn = document.getElementById('transliterate-btn');
@@ -146,6 +175,7 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'true');
       this.setResultStatus('transliterate-status', 'Waiting for response', true);
+      this.setActiveRequest('transliterate', requestId);
     } else if (data.type === 'ascii') {
       const input = document.getElementById('ascii-input');
       const btn = document.getElementById('generate-btn');
@@ -159,6 +189,7 @@ class PopupApp {
       area.classList.remove('hidden');
       area.setAttribute('aria-busy', 'true');
       this.setResultStatus('ascii-status', 'Waiting for response', true);
+      this.setActiveRequest('ascii', requestId);
     }
   }
 
@@ -215,6 +246,65 @@ class PopupApp {
     this.setupAsciiEvents();
   }
 
+  setActiveRequest(type, requestId) {
+    if (requestId) {
+      this.activeRequests.set(type, requestId);
+    } else {
+      this.activeRequests.delete(type);
+    }
+    this.toggleStopButton(type, Boolean(requestId));
+  }
+
+  clearActiveRequest(type) {
+    this.setActiveRequest(type, null);
+  }
+
+  toggleStopButton(type, isActive) {
+    const id = type === 'transliterate' ? 'stop-transliterate-btn' : 'stop-ascii-btn';
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('hidden', !isActive);
+  }
+
+  async cancelRequest(type) {
+    const requestId = this.activeRequests.get(type);
+    if (!requestId) return;
+
+    try {
+      await chrome.runtime.sendMessage({ action: 'cancel-pending-request', requestId });
+      await chrome.runtime.sendMessage({ action: 'clear-pending-request', requestId });
+    } catch (err) {
+      console.log('Cancel request failed:', err);
+    }
+
+    if (type === 'transliterate') {
+      const btn = document.getElementById('transliterate-btn');
+      const output = document.getElementById('transliterate-result');
+      const area = document.getElementById('transliterate-result-area');
+      const isTranslate = document.getElementById('translate-mode').checked;
+      
+      output.textContent = 'Cancelled.';
+      area.classList.remove('hidden');
+      area.setAttribute('aria-busy', 'false');
+      this.setResultStatus('transliterate-status', 'Cancelled', false);
+      btn.disabled = false;
+      btn.querySelector('.btn-text').textContent = isTranslate ? 'Translate to Persian' : 'Transliterate to Persian';
+    } else if (type === 'ascii') {
+      const btn = document.getElementById('generate-btn');
+      const output = document.getElementById('ascii-result');
+      const area = document.getElementById('result-area');
+      
+      output.textContent = 'Cancelled.';
+      area.classList.remove('hidden');
+      area.setAttribute('aria-busy', 'false');
+      this.setResultStatus('ascii-status', 'Cancelled', false);
+      btn.disabled = false;
+      btn.querySelector('.btn-text').textContent = 'Generate Art';
+    }
+
+    this.clearActiveRequest(type);
+  }
+
   populateAboutInfo() {
     const manifest = chrome?.runtime?.getManifest?.();
     if (!manifest) return;
@@ -269,6 +359,7 @@ class PopupApp {
     const btn = document.getElementById('transliterate-btn');
     const input = document.getElementById('transliterate-input');
     const modeToggle = document.getElementById('translate-mode');
+    const stopBtn = document.getElementById('stop-transliterate-btn');
 
     btn.addEventListener('click', () => this.convertText());
     input.addEventListener('keydown', (e) => {
@@ -295,6 +386,10 @@ class PopupApp {
       copyBtn.textContent = '✓';
       setTimeout(() => copyBtn.textContent = '📋', 1500);
     });
+
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => this.cancelRequest('transliterate'));
+    }
   }
 
   updateModeUI() {
@@ -306,6 +401,7 @@ class PopupApp {
   setupAsciiEvents() {
     const btn = document.getElementById('generate-btn');
     const input = document.getElementById('ascii-input');
+    const stopBtn = document.getElementById('stop-ascii-btn');
 
     btn.addEventListener('click', () => this.generateAsciiArt());
     input.addEventListener('keydown', (e) => {
@@ -327,6 +423,10 @@ class PopupApp {
       btn.textContent = '✓';
       setTimeout(() => btn.textContent = '📋', 1500);
     });
+
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => this.cancelRequest('ascii'));
+    }
   }
 
   switchTab(tabName) {
@@ -359,6 +459,7 @@ class PopupApp {
 
     const modeLabel = isTranslate ? 'Translate' : 'Transliterate';
     const requestId = `transliterate-${Date.now()}`;
+    this.setActiveRequest('transliterate', requestId);
     
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = isTranslate ? 'Translating...' : 'Transliterating...';
@@ -377,6 +478,15 @@ class PopupApp {
         language: 'fa'
       });
 
+      if (this.activeRequests.get('transliterate') !== requestId) {
+        return;
+      }
+
+      if (response.cancelled) {
+        this.showCancelledRequest({ type: 'transliterate' });
+        return;
+      }
+
       if (response.success) {
         output.textContent = response.result;
         await this.history.refresh();
@@ -388,14 +498,21 @@ class PopupApp {
         setTimeout(() => output.style.color = '', 3000);
       }
     } catch (err) {
+      if (this.activeRequests.get('transliterate') !== requestId) {
+        return;
+      }
       output.textContent = `Error: ${err.message}`;
       output.style.color = '#ef4444';
       setTimeout(() => output.style.color = '', 3000);
     } finally {
+      if (this.activeRequests.get('transliterate') !== requestId) {
+        return;
+      }
       btn.disabled = false;
       btn.querySelector('.btn-text').textContent = `${modeLabel} to Persian`;
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('transliterate-status', '', false);
+      this.clearActiveRequest('transliterate');
     }
   }
 
@@ -410,6 +527,7 @@ class PopupApp {
     if (!this.checkApiConfigured(output, area)) return;
 
     const requestId = `ascii-${Date.now()}`;
+    this.setActiveRequest('ascii', requestId);
     
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'Generating...';
@@ -426,6 +544,15 @@ class PopupApp {
         text: request
       });
 
+      if (this.activeRequests.get('ascii') !== requestId) {
+        return;
+      }
+
+      if (response.cancelled) {
+        this.showCancelledRequest({ type: 'ascii' });
+        return;
+      }
+
       if (response.success) {
         output.textContent = response.result;
         await this.history.refresh();
@@ -437,14 +564,21 @@ class PopupApp {
         setTimeout(() => output.style.color = '', 3000);
       }
     } catch (err) {
+      if (this.activeRequests.get('ascii') !== requestId) {
+        return;
+      }
       output.textContent = `Error: ${err.message}`;
       output.style.color = '#ef4444';
       setTimeout(() => output.style.color = '', 3000);
     } finally {
+      if (this.activeRequests.get('ascii') !== requestId) {
+        return;
+      }
       btn.disabled = false;
       btn.querySelector('.btn-text').textContent = 'Generate Art';
       area.setAttribute('aria-busy', 'false');
       this.setResultStatus('ascii-status', '', false);
+      this.clearActiveRequest('ascii');
     }
   }
 

@@ -60,23 +60,25 @@ class ApiClient {
       .replace(/[\r\n]/g, '');
   }
 
-  async transliterate(text, languageCode) {
-    return this._convert(text, languageCode, 'TRANSLITERATE');
+  async transliterate(text, languageCode, options = {}) {
+    return this._convert(text, languageCode, 'TRANSLITERATE', options);
   }
 
-  async translate(text, languageCode) {
-    return this._convert(text, languageCode, 'TRANSLATE');
+  async translate(text, languageCode, options = {}) {
+    return this._convert(text, languageCode, 'TRANSLATE', options);
   }
 
-  async _convert(text, languageCode, mode) {
+  async _convert(text, languageCode, mode, options = {}) {
     const creds = await this.getDecryptedCredentials();
     const langName = CONFIG.LANGUAGES.find(l => l.code === languageCode)?.name || languageCode;
     const headers = this.buildHeaders(creds);
     const prompt = CONFIG.PROMPTS[mode](text, langName);
+    const { signal } = options;
     
     const response = await fetch(creds.apiUrl, {
       method: 'POST',
       headers: headers,
+      signal,
       body: JSON.stringify({
         model: creds.apiModel,
         messages: [{ role: 'user', content: prompt }],
@@ -92,13 +94,15 @@ class ApiClient {
     return data.choices[0].message.content.trim();
   }
 
-  async generateAsciiArt(request) {
+  async generateAsciiArt(request, options = {}) {
     const creds = await this.getDecryptedCredentials();
     const headers = this.buildHeaders(creds);
+    const { signal } = options;
     
     const response = await fetch(creds.apiUrl, {
       method: 'POST',
       headers: headers,
+      signal,
       body: JSON.stringify({
         model: creds.apiModel,
         messages: [{

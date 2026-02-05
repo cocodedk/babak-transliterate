@@ -3,6 +3,7 @@ import CONFIG from '../shared/constants.js';
 
 const PENDING_REQUESTS_KEY = 'pendingRequests';
 const { CHAT_HISTORY, LAST_RESULTS } = CONFIG.STORAGE_KEYS;
+const activeControllers = new Map();
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -116,10 +117,21 @@ async function setPendingRequest(id, data) {
 async function completePendingRequest(id, output, error = null) {
   const result = await chrome.storage.local.get([PENDING_REQUESTS_KEY]);
   const pending = result[PENDING_REQUESTS_KEY] || {};
-  if (pending[id]) {
+  if (pending[id] && pending[id].status !== 'cancelled') {
     pending[id].status = error ? 'error' : 'completed';
     pending[id].output = output;
     pending[id].error = error;
+    pending[id].completedAt = Date.now();
+    await chrome.storage.local.set({ [PENDING_REQUESTS_KEY]: pending });
+  }
+}
+
+async function cancelPendingRequest(id, reason = 'Cancelled by user') {
+  const result = await chrome.storage.local.get([PENDING_REQUESTS_KEY]);
+  const pending = result[PENDING_REQUESTS_KEY] || {};
+  if (pending[id] && pending[id].status === 'pending') {
+    pending[id].status = 'cancelled';
+    pending[id].error = reason;
     pending[id].completedAt = Date.now();
     await chrome.storage.local.set({ [PENDING_REQUESTS_KEY]: pending });
   }
@@ -141,11 +153,13 @@ async function handlePopupConvert(requestId, text, isTranslate, language) {
     language 
   });
   
+  const controller = new AbortController();
+  activeControllers.set(requestId, controller);
   try {
     const client = new ApiClient();
     const result = isTranslate 
-      ? await client.translate(text, language)
-      : await client.transliterate(text, language);
+      ? await client.translate(text, language, { signal: controller.signal })
+      : await client.transliterate(text, language, { signal: controller.signal });
     
     await completePendingRequest(requestId, result);
     await saveHistoryEntry(text, result);
@@ -155,8 +169,14 @@ async function handlePopupConvert(requestId, text, isTranslate, language) {
     
     return { success: true, result, requestId };
   } catch (err) {
+    if (err.name === 'AbortError') {
+      await cancelPendingRequest(requestId);
+      return { success: false, cancelled: true, requestId };
+    }
     await completePendingRequest(requestId, null, err.message);
     return { success: false, error: err.message, requestId };
+  } finally {
+    activeControllers.delete(requestId);
   }
 }
 
@@ -166,9 +186,11 @@ async function handlePopupAscii(requestId, text) {
     input: text 
   });
   
+  const controller = new AbortController();
+  activeControllers.set(requestId, controller);
   try {
     const client = new ApiClient();
-    const result = await client.generateAsciiArt(text);
+    const result = await client.generateAsciiArt(text, { signal: controller.signal });
     
     await completePendingRequest(requestId, result);
     await saveHistoryEntry(text, result);
@@ -178,8 +200,14 @@ async function handlePopupAscii(requestId, text) {
     
     return { success: true, result, requestId };
   } catch (err) {
+    if (err.name === 'AbortError') {
+      await cancelPendingRequest(requestId);
+      return { success: false, cancelled: true, requestId };
+    }
     await completePendingRequest(requestId, null, err.message);
     return { success: false, error: err.message, requestId };
+  } finally {
+    activeControllers.delete(requestId);
   }
 }
 
@@ -212,6 +240,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === 'clear-pending-request') {
     clearPendingRequest(request.requestId).then(() => sendResponse({ success: true }));
+    return true;
+  }
+
+  if (request.action === 'cancel-pending-request') {
+    const controller = activeControllers.get(request.requestId);
+    if (controller) controller.abort();
+    cancelPendingRequest(request.requestId).then(() => sendResponse({ success: true }));
     return true;
   }
 });
