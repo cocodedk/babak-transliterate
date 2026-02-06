@@ -145,7 +145,8 @@ async function clearPendingRequest(id) {
 }
 
 // Handle popup requests that need to survive popup close
-async function handlePopupConvert(requestId, text, isTranslate, language) {
+// port can be null when popup is closed or using non-streaming fallback
+async function handlePopupConvert(requestId, text, isTranslate, language, port) {
   await setPendingRequest(requestId, { 
     type: 'transliterate', 
     input: text, 
@@ -157,9 +158,15 @@ async function handlePopupConvert(requestId, text, isTranslate, language) {
   activeControllers.set(requestId, controller);
   try {
     const client = new ApiClient();
+    const streamOpts = {
+      signal: controller.signal,
+      onChunk: port ? (chunk, accumulated) => {
+        try { port.postMessage({ type: 'chunk', requestId, chunk, accumulated }); } catch {}
+      } : undefined
+    };
     const result = isTranslate 
-      ? await client.translate(text, language, { signal: controller.signal })
-      : await client.transliterate(text, language, { signal: controller.signal });
+      ? await client.translate(text, language, streamOpts)
+      : await client.transliterate(text, language, streamOpts);
     
     await completePendingRequest(requestId, result);
     await saveHistoryEntry(text, result);
@@ -167,20 +174,29 @@ async function handlePopupConvert(requestId, text, isTranslate, language) {
       transliterate: { input: text, output: result, isTranslate, timestamp: Date.now() }
     });
     
+    if (port) {
+      try { port.postMessage({ type: 'done', requestId, result }); } catch {}
+    }
     return { success: true, result, requestId };
   } catch (err) {
     if (err.name === 'AbortError') {
       await cancelPendingRequest(requestId);
+      if (port) {
+        try { port.postMessage({ type: 'cancelled', requestId }); } catch {}
+      }
       return { success: false, cancelled: true, requestId };
     }
     await completePendingRequest(requestId, null, err.message);
+    if (port) {
+      try { port.postMessage({ type: 'error', requestId, error: err.message }); } catch {}
+    }
     return { success: false, error: err.message, requestId };
   } finally {
     activeControllers.delete(requestId);
   }
 }
 
-async function handlePopupAscii(requestId, text) {
+async function handlePopupAscii(requestId, text, port) {
   await setPendingRequest(requestId, { 
     type: 'ascii', 
     input: text 
@@ -190,7 +206,13 @@ async function handlePopupAscii(requestId, text) {
   activeControllers.set(requestId, controller);
   try {
     const client = new ApiClient();
-    const result = await client.generateAsciiArt(text, { signal: controller.signal });
+    const streamOpts = {
+      signal: controller.signal,
+      onChunk: port ? (chunk, accumulated) => {
+        try { port.postMessage({ type: 'chunk', requestId, chunk, accumulated }); } catch {}
+      } : undefined
+    };
+    const result = await client.generateAsciiArt(text, streamOpts);
     
     await completePendingRequest(requestId, result);
     await saveHistoryEntry(text, result);
@@ -198,36 +220,50 @@ async function handlePopupAscii(requestId, text) {
       ascii: { input: text, output: result, timestamp: Date.now() }
     });
     
+    if (port) {
+      try { port.postMessage({ type: 'done', requestId, result }); } catch {}
+    }
     return { success: true, result, requestId };
   } catch (err) {
     if (err.name === 'AbortError') {
       await cancelPendingRequest(requestId);
+      if (port) {
+        try { port.postMessage({ type: 'cancelled', requestId }); } catch {}
+      }
       return { success: false, cancelled: true, requestId };
     }
     await completePendingRequest(requestId, null, err.message);
+    if (port) {
+      try { port.postMessage({ type: 'error', requestId, error: err.message }); } catch {}
+    }
     return { success: false, error: err.message, requestId };
   } finally {
     activeControllers.delete(requestId);
   }
 }
 
+// Port-based streaming connection from popup
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== 'streaming') return;
+
+  port.onMessage.addListener((msg) => {
+    if (msg.action === 'popup-convert') {
+      handlePopupConvert(msg.requestId, msg.text, msg.isTranslate, msg.language || 'fa', port);
+    } else if (msg.action === 'popup-ascii') {
+      handlePopupAscii(msg.requestId, msg.text, port);
+    } else if (msg.action === 'cancel-pending-request') {
+      const controller = activeControllers.get(msg.requestId);
+      if (controller) controller.abort();
+      cancelPendingRequest(msg.requestId);
+    }
+  });
+});
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'transliterate') {
     handleTransliteration(request.text, request.language)
       .then(result => sendResponse({ success: true, result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
-    return true;
-  }
-  
-  if (request.action === 'popup-convert') {
-    handlePopupConvert(request.requestId, request.text, request.isTranslate, request.language || 'fa')
-      .then(sendResponse);
-    return true;
-  }
-  
-  if (request.action === 'popup-ascii') {
-    handlePopupAscii(request.requestId, request.text)
-      .then(sendResponse);
     return true;
   }
   

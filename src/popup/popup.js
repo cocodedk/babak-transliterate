@@ -271,6 +271,7 @@ class PopupApp {
     if (!requestId) return;
 
     try {
+      // Cancel works via both sendMessage (for pending check) and the streaming port handles it via its own listener
       await chrome.runtime.sendMessage({ action: 'cancel-pending-request', requestId });
       await chrome.runtime.sendMessage({ action: 'clear-pending-request', requestId });
     } catch (err) {
@@ -446,6 +447,64 @@ class PopupApp {
     return true;
   }
 
+  // Open a streaming port to the background script
+  _openStreamingPort() {
+    const port = chrome.runtime.connect({ name: 'streaming' });
+    return port;
+  }
+
+  // Generic streaming request handler
+  _streamRequest({ port, requestId, type, outputEl, areaEl, btnEl, btnDoneText, statusId, draftKey, onDone }) {
+    return new Promise((resolve) => {
+      let receivedFirst = false;
+
+      port.onMessage.addListener((msg) => {
+        if (msg.requestId !== requestId) return;
+
+        if (msg.type === 'chunk') {
+          if (!receivedFirst) {
+            receivedFirst = true;
+            outputEl.textContent = '';
+            this.setResultStatus(statusId, 'Streaming...', true);
+          }
+          outputEl.textContent = msg.accumulated;
+        } else if (msg.type === 'done') {
+          outputEl.textContent = msg.result;
+          areaEl.setAttribute('aria-busy', 'false');
+          this.setResultStatus(statusId, '', false);
+          btnEl.disabled = false;
+          btnEl.querySelector('.btn-text').textContent = btnDoneText;
+          this.clearActiveRequest(type);
+          if (onDone) onDone(msg.result);
+          try { port.disconnect(); } catch {}
+          resolve({ success: true, result: msg.result });
+        } else if (msg.type === 'error') {
+          outputEl.textContent = `Error: ${msg.error}`;
+          outputEl.style.color = '#ef4444';
+          areaEl.setAttribute('aria-busy', 'false');
+          this.setResultStatus(statusId, '', false);
+          btnEl.disabled = false;
+          btnEl.querySelector('.btn-text').textContent = btnDoneText;
+          this.clearActiveRequest(type);
+          setTimeout(() => outputEl.style.color = '', 3000);
+          try { port.disconnect(); } catch {}
+          resolve({ success: false, error: msg.error });
+        } else if (msg.type === 'cancelled') {
+          this.showCancelledRequest({ type });
+          btnEl.disabled = false;
+          btnEl.querySelector('.btn-text').textContent = btnDoneText;
+          try { port.disconnect(); } catch {}
+          resolve({ success: false, cancelled: true });
+        }
+      });
+
+      port.onDisconnect.addListener(() => {
+        // Port disconnected (e.g. background restart) — resolve to avoid hanging
+        resolve({ success: false, error: 'Connection lost' });
+      });
+    });
+  }
+
   async convertText() {
     const input = document.getElementById('transliterate-input');
     const btn = document.getElementById('transliterate-btn');
@@ -468,52 +527,30 @@ class PopupApp {
     area.setAttribute('aria-busy', 'true');
     this.setResultStatus('transliterate-status', 'Waiting for response', true);
 
-    try {
-      // Send request to background script - survives popup close
-      const response = await chrome.runtime.sendMessage({
-        action: 'popup-convert',
-        requestId,
-        text,
-        isTranslate,
-        language: 'fa'
-      });
+    const port = this._openStreamingPort();
+    port.postMessage({
+      action: 'popup-convert',
+      requestId,
+      text,
+      isTranslate,
+      language: 'fa'
+    });
 
-      if (this.activeRequests.get('transliterate') !== requestId) {
-        return;
-      }
-
-      if (response.cancelled) {
-        this.showCancelledRequest({ type: 'transliterate' });
-        return;
-      }
-
-      if (response.success) {
-        output.textContent = response.result;
+    await this._streamRequest({
+      port,
+      requestId,
+      type: 'transliterate',
+      outputEl: output,
+      areaEl: area,
+      btnEl: btn,
+      btnDoneText: `${modeLabel} to Persian`,
+      statusId: 'transliterate-status',
+      draftKey: 'transliterateInput',
+      onDone: async () => {
         await this.history.refresh();
-        // Clear draft after successful conversion
         await clearDraftInput('transliterateInput');
-      } else {
-        output.textContent = `Error: ${response.error}`;
-        output.style.color = '#ef4444';
-        setTimeout(() => output.style.color = '', 3000);
       }
-    } catch (err) {
-      if (this.activeRequests.get('transliterate') !== requestId) {
-        return;
-      }
-      output.textContent = `Error: ${err.message}`;
-      output.style.color = '#ef4444';
-      setTimeout(() => output.style.color = '', 3000);
-    } finally {
-      if (this.activeRequests.get('transliterate') !== requestId) {
-        return;
-      }
-      btn.disabled = false;
-      btn.querySelector('.btn-text').textContent = `${modeLabel} to Persian`;
-      area.setAttribute('aria-busy', 'false');
-      this.setResultStatus('transliterate-status', '', false);
-      this.clearActiveRequest('transliterate');
-    }
+    });
   }
 
   async generateAsciiArt() {
@@ -536,50 +573,28 @@ class PopupApp {
     area.setAttribute('aria-busy', 'true');
     this.setResultStatus('ascii-status', 'Waiting for response', true);
 
-    try {
-      // Send request to background script - survives popup close
-      const response = await chrome.runtime.sendMessage({
-        action: 'popup-ascii',
-        requestId,
-        text: request
-      });
+    const port = this._openStreamingPort();
+    port.postMessage({
+      action: 'popup-ascii',
+      requestId,
+      text: request
+    });
 
-      if (this.activeRequests.get('ascii') !== requestId) {
-        return;
-      }
-
-      if (response.cancelled) {
-        this.showCancelledRequest({ type: 'ascii' });
-        return;
-      }
-
-      if (response.success) {
-        output.textContent = response.result;
+    await this._streamRequest({
+      port,
+      requestId,
+      type: 'ascii',
+      outputEl: output,
+      areaEl: area,
+      btnEl: btn,
+      btnDoneText: 'Generate Art',
+      statusId: 'ascii-status',
+      draftKey: 'asciiInput',
+      onDone: async () => {
         await this.history.refresh();
-        // Clear draft after successful conversion
         await clearDraftInput('asciiInput');
-      } else {
-        output.textContent = `Error: ${response.error}`;
-        output.style.color = '#ef4444';
-        setTimeout(() => output.style.color = '', 3000);
       }
-    } catch (err) {
-      if (this.activeRequests.get('ascii') !== requestId) {
-        return;
-      }
-      output.textContent = `Error: ${err.message}`;
-      output.style.color = '#ef4444';
-      setTimeout(() => output.style.color = '', 3000);
-    } finally {
-      if (this.activeRequests.get('ascii') !== requestId) {
-        return;
-      }
-      btn.disabled = false;
-      btn.querySelector('.btn-text').textContent = 'Generate Art';
-      area.setAttribute('aria-busy', 'false');
-      this.setResultStatus('ascii-status', '', false);
-      this.clearActiveRequest('ascii');
-    }
+    });
   }
 
   setResultStatus(id, message, isLoading) {
