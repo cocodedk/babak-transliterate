@@ -25,8 +25,8 @@ const CONFIG = {
     ASCII_ART: (request) =>
       `Create ASCII art of: ${request}\n` +
       `Use only standard ASCII characters.\n` +
-      `Ensure the art is creative and well-formatted.\n` +
-      `Return ONLY the ASCII art, no additional text.`
+      `Keep it compact: max 20 lines, max 60 characters wide.\n` +
+      `Return ONLY the ASCII art, no additional text or explanation.`
   }
 };
 

@@ -439,3 +439,29 @@
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
   padding-top: 10px;
 }
+
+/* Reasoning display — shows model thinking tokens */
+.reasoning-display {
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 10px 16px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: #8b8fa3;
+  background: rgba(99, 102, 241, 0.06);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.reasoning-display.hidden {
+  display: none;
+}
+
+.reasoning-display.collapsed {
+  max-height: 40px;
+  opacity: 0.4;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}

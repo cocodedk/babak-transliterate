@@ -81,7 +81,7 @@ class ApiClient {
     const creds = await this.getDecryptedCredentials();
     const headers = this.buildHeaders(creds);
     
-    return this._fetchStreaming(creds, headers, [{ role: 'user', content: CONFIG.PROMPTS.ASCII_ART(request) }], 0.7, options);
+    return this._fetchStreaming(creds, headers, [{ role: 'user', content: CONFIG.PROMPTS.ASCII_ART(request) }], 0.5, options);
   }
 
   async _fetchStreaming(creds, headers, messages, temperature, options = {}) {
@@ -109,10 +109,12 @@ class ApiClient {
       return data.choices[0].message.content.trim();
     }
 
-    // Parse SSE stream
+    // Parse SSE stream — supports both regular and reasoning models
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let accumulated = '';
+    let reasoning = '';
+    let isReasoning = false;
     let buffer = '';
 
     while (true) {
@@ -132,10 +134,23 @@ class ApiClient {
 
         try {
           const parsed = JSON.parse(payload);
-          const content = parsed.choices?.[0]?.delta?.content;
+          const delta = parsed.choices?.[0]?.delta;
+          const content = delta?.content;
+          const reasoningContent = delta?.reasoning;
+
           if (content) {
+            // Actual content tokens — display these
+            if (isReasoning) {
+              // Transitioned from reasoning to content
+              isReasoning = false;
+            }
             accumulated += content;
-            onChunk(content, accumulated);
+            onChunk(content, accumulated, false);
+          } else if (reasoningContent) {
+            // Reasoning/thinking tokens — stream to UI
+            reasoning += reasoningContent;
+            isReasoning = true;
+            onChunk(reasoningContent, reasoning, true);
           }
         } catch {
           // skip malformed JSON lines

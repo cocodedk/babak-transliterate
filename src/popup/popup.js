@@ -454,18 +454,37 @@ class PopupApp {
   }
 
   // Generic streaming request handler
-  _streamRequest({ port, requestId, type, outputEl, areaEl, btnEl, btnDoneText, statusId, draftKey, onDone }) {
+  _streamRequest({ port, requestId, type, outputEl, areaEl, btnEl, btnDoneText, statusId, reasoningEl, draftKey, onDone }) {
     return new Promise((resolve) => {
       let receivedFirst = false;
+
+      // Reset reasoning display for this task
+      if (reasoningEl) {
+        reasoningEl.textContent = '';
+        reasoningEl.classList.add('hidden');
+      }
 
       port.onMessage.addListener((msg) => {
         if (msg.requestId !== requestId) return;
 
-        if (msg.type === 'chunk') {
+        if (msg.type === 'reasoning') {
+          // Model is thinking — show reasoning tokens live
+          this.setResultStatus(statusId, 'Thinking...', true);
+          if (reasoningEl) {
+            reasoningEl.classList.remove('hidden');
+            reasoningEl.textContent = msg.accumulated;
+            // Auto-scroll to bottom so latest reasoning lines are visible
+            reasoningEl.scrollTop = reasoningEl.scrollHeight;
+          }
+        } else if (msg.type === 'chunk') {
           if (!receivedFirst) {
             receivedFirst = true;
             outputEl.textContent = '';
             this.setResultStatus(statusId, 'Streaming...', true);
+            // Collapse reasoning when real content starts
+            if (reasoningEl && !reasoningEl.classList.contains('hidden')) {
+              reasoningEl.classList.add('collapsed');
+            }
           }
           outputEl.textContent = msg.accumulated;
         } else if (msg.type === 'done') {
@@ -475,6 +494,12 @@ class PopupApp {
           btnEl.disabled = false;
           btnEl.querySelector('.btn-text').textContent = btnDoneText;
           this.clearActiveRequest(type);
+          // Hide reasoning on completion
+          if (reasoningEl) {
+            reasoningEl.classList.add('hidden');
+            reasoningEl.classList.remove('collapsed');
+            reasoningEl.textContent = '';
+          }
           if (onDone) onDone(msg.result);
           try { port.disconnect(); } catch {}
           resolve({ success: true, result: msg.result });
@@ -486,6 +511,11 @@ class PopupApp {
           btnEl.disabled = false;
           btnEl.querySelector('.btn-text').textContent = btnDoneText;
           this.clearActiveRequest(type);
+          if (reasoningEl) {
+            reasoningEl.classList.add('hidden');
+            reasoningEl.classList.remove('collapsed');
+            reasoningEl.textContent = '';
+          }
           setTimeout(() => outputEl.style.color = '', 3000);
           try { port.disconnect(); } catch {}
           resolve({ success: false, error: msg.error });
@@ -493,6 +523,11 @@ class PopupApp {
           this.showCancelledRequest({ type });
           btnEl.disabled = false;
           btnEl.querySelector('.btn-text').textContent = btnDoneText;
+          if (reasoningEl) {
+            reasoningEl.classList.add('hidden');
+            reasoningEl.classList.remove('collapsed');
+            reasoningEl.textContent = '';
+          }
           try { port.disconnect(); } catch {}
           resolve({ success: false, cancelled: true });
         }
@@ -545,6 +580,7 @@ class PopupApp {
       btnEl: btn,
       btnDoneText: `${modeLabel} to Persian`,
       statusId: 'transliterate-status',
+      reasoningEl: document.getElementById('transliterate-reasoning'),
       draftKey: 'transliterateInput',
       onDone: async () => {
         await this.history.refresh();
@@ -589,6 +625,7 @@ class PopupApp {
       btnEl: btn,
       btnDoneText: 'Generate Art',
       statusId: 'ascii-status',
+      reasoningEl: document.getElementById('ascii-reasoning'),
       draftKey: 'asciiInput',
       onDone: async () => {
         await this.history.refresh();

@@ -160,8 +160,8 @@ async function handlePopupConvert(requestId, text, isTranslate, language, port) 
     const client = new ApiClient();
     const streamOpts = {
       signal: controller.signal,
-      onChunk: port ? (chunk, accumulated) => {
-        try { port.postMessage({ type: 'chunk', requestId, chunk, accumulated }); } catch {}
+      onChunk: port ? (chunk, accumulated, isReasoning) => {
+        try { port.postMessage({ type: isReasoning ? 'reasoning' : 'chunk', requestId, chunk, accumulated }); } catch {}
       } : undefined
     };
     const result = isTranslate 
@@ -208,8 +208,8 @@ async function handlePopupAscii(requestId, text, port) {
     const client = new ApiClient();
     const streamOpts = {
       signal: controller.signal,
-      onChunk: port ? (chunk, accumulated) => {
-        try { port.postMessage({ type: 'chunk', requestId, chunk, accumulated }); } catch {}
+      onChunk: port ? (chunk, accumulated, isReasoning) => {
+        try { port.postMessage({ type: isReasoning ? 'reasoning' : 'chunk', requestId, chunk, accumulated }); } catch {}
       } : undefined
     };
     const result = await client.generateAsciiArt(text, streamOpts);
