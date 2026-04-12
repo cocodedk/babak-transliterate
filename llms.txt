@@ -1,0 +1,21 @@
+# Babak Transliterate
+
+> Node.js transliteration library for converting between Latin and Persian/Arabic scripts.
+
+A JavaScript/Node.js module providing transliteration functionality for Persian and Arabic text, enabling conversion between Latin keyboard input and native script characters.
+
+## Key Features
+- Latin to Persian/Arabic transliteration
+- Node.js ES module
+- Tested with Node.js built-in test runner
+- No external dependencies
+
+## Source
+- [GitHub Repository](https://github.com/cocodedk/babak-transliterate)
+- [Releases](https://github.com/cocodedk/babak-transliterate/releases)
+
+## Author
+Babak Bandpey — [cocode.dk](https://cocode.dk) | [LinkedIn](https://linkedin.com/in/babakbandpey)
+
+## License
+Apache-2.0

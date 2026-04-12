@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Babak Transliterate — AI-Powered Persian Transliteration Chrome Extension</title>
+  <meta name="description" content="Babak Transliterate is a free Chrome extension that uses AI to transliterate Latin text to Persian (Farsi) and generate ASCII art. Dark mode, private, and easy to use." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://cocodedk.github.io/babak-transliterate/" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Babak Transliterate" />
+  <meta property="og:title" content="Babak Transliterate — AI-Powered Persian Transliteration" />
+  <meta property="og:description" content="Free Chrome extension that uses AI to transliterate Latin text to Persian and generate ASCII art." />
+  <meta property="og:url" content="https://cocodedk.github.io/babak-transliterate/" />
+  <meta property="og:image" content="https://cocodedk.github.io/babak-transliterate/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Babak Transliterate Chrome extension logo" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Babak Transliterate — AI-Powered Persian Transliteration" />
+  <meta name="twitter:description" content="Free Chrome extension for AI-powered Latin to Persian transliteration." />
+  <meta name="twitter:image" content="https://cocodedk.github.io/babak-transliterate/og.png" />
+  <meta name="twitter:image:alt" content="Babak Transliterate extension" />
+
+  <!-- Hreflang alternates -->
+  <link rel="alternate" hreflang="en"        href="https://cocodedk.github.io/babak-transliterate/" />
+  <link rel="alternate" hreflang="fa"        href="https://cocodedk.github.io/babak-transliterate/fa/" />
+  <link rel="alternate" hreflang="x-default" href="https://cocodedk.github.io/babak-transliterate/" />
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Babak Transliterate",
+    "description": "Chrome extension using AI to transliterate Latin text to Persian and generate ASCII art.",
+    "url": "https://cocodedk.github.io/babak-transliterate/",
+    "downloadUrl": "https://github.com/cocodedk/babak-transliterate/releases/latest",
+    "applicationCategory": "BrowserApplication",
+    "operatingSystem": "Chrome, Chromium, Edge",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": {
+      "@type": "Person",
+      "name": "Babak Bandpey",
+      "url": "https://cocode.dk",
+      "sameAs": ["https://linkedin.com/in/babakbandpey", "https://github.com/cocodedk"]
+    },
+    "codeRepository": "https://github.com/cocodedk/babak-transliterate"
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">بـ Babak Transliterate</span>
+    <a href="fa/" class="lang-switch">فارسی</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>AI-Powered Persian Transliteration</h1>
+      <p>Babak Transliterate is a Chrome extension that uses AI to convert Latin text to Persian (Farsi) with a right-click — and generate creative ASCII art via an AI chat interface.</p>
+      <a href="https://github.com/cocodedk/babak-transliterate/releases/latest" class="btn">Download Extension</a>
+    </section>
+
+    <section>
+      <h2>Features</h2>
+      <ul>
+        <li>AI-powered Latin to Persian transliteration via right-click context menu</li>
+        <li>ASCII Art chat interface powered by AI</li>
+        <li>Secure API key storage with Chrome sync storage</li>
+        <li>Dark mode UI with glassmorphism design</li>
+        <li>Fast and lightweight — lazy loading and debounced inputs</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Installation</h2>
+      <ol>
+        <li>Download the latest release from <a href="https://github.com/cocodedk/babak-transliterate/releases/latest">GitHub Releases</a>.</li>
+        <li>Extract the ZIP — you will find a <code>src/</code> folder inside.</li>
+        <li>Open Chrome and navigate to <code>chrome://extensions/</code>.</li>
+        <li>Enable <strong>Developer mode</strong> (top-right toggle).</li>
+        <li>Click <strong>Load unpacked</strong> and select the <code>src/</code> folder.</li>
+        <li>Open the extension options to set your AI API key.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Build from Source</h2>
+      <pre><code>git clone https://github.com/cocodedk/babak-transliterate.git
+cd babak-transliterate
+npm test   # Run tests
+# Load src/ as unpacked extension in Chrome</code></pre>
+    </section>
+
+    <section>
+      <h2>Architecture</h2>
+      <pre><code>src/
+├── manifest.json   ← Chrome MV3 manifest
+├── background/     ← Service worker, AI API calls
+├── content/        ← Content scripts
+├── popup/          ← Toolbar popup
+├── options/        ← Settings page (API key)
+└── shared/         ← Transliteration engine</code></pre>
+    </section>
+
+    <section>
+      <h2>Author</h2>
+      <p><strong>Babak Bandpey</strong> — <a href="https://cocode.dk" target="_blank" rel="noreferrer">cocode.dk</a> | <a href="https://linkedin.com/in/babakbandpey" target="_blank" rel="noreferrer">LinkedIn</a> | <a href="https://github.com/cocodedk" target="_blank" rel="noreferrer">GitHub</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Apache-2.0 &nbsp;|&nbsp; © 2026 <a href="https://cocode.dk" target="_blank" rel="noreferrer">Cocode</a> &nbsp;|&nbsp; Created by <a href="https://linkedin.com/in/babakbandpey" target="_blank" rel="noreferrer">Babak Bandpey</a></p>
+  </footer>
+</body>
+</html>

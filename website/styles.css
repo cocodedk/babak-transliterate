@@ -1,0 +1,107 @@
+/* Babak Transliterate — GitHub Pages stylesheet */
+:root {
+  --bg: #09090f;
+  --surface: #13131f;
+  --border: #1e1e2e;
+  --accent: #f59e0b;
+  --accent-dim: #d97706;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --radius: 8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header .logo { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+
+.lang-switch {
+  font-size: 0.875rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+}
+.lang-switch:hover { background: var(--accent); color: var(--bg); text-decoration: none; }
+
+main { max-width: 860px; margin: 0 auto; padding: 3rem 2rem; }
+
+.hero { text-align: center; margin-bottom: 3rem; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); color: var(--accent); margin-bottom: 1rem; }
+.hero p { font-size: 1.125rem; color: var(--text-dim); max-width: 620px; margin: 0 auto 1.5rem; }
+
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0.75rem 2rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.btn:hover { background: var(--accent-dim); text-decoration: none; }
+
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.5rem; color: var(--accent); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+
+ul { list-style: none; padding: 0; }
+ul li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; }
+ul li::before { content: "→"; position: absolute; left: 0; color: var(--accent); }
+
+ol { padding-left: 1.5rem; }
+ol li { padding: 0.4rem 0; }
+
+code {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+}
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+pre code { background: none; border: none; padding: 0; }
+
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+/* RTL / Persian overrides */
+[dir="rtl"] body { font-family: 'Vazirmatn', 'Tahoma', sans-serif; }
+[dir="rtl"] ul li { padding-right: 1.5rem; padding-left: 0; }
+[dir="rtl"] ul li::before { right: 0; left: auto; }
+[dir="rtl"] ol { padding-right: 1.5rem; padding-left: 0; }
+[dir="rtl"] header { flex-direction: row-reverse; }
