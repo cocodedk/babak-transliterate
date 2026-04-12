@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+# Node.js / node:test pre-commit hook
+SMOKE_CMD="npm test"
+
+echo "Running pre-commit checks..."
+$SMOKE_CMD
+echo "Pre-commit checks passed."
