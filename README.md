@@ -3,8 +3,8 @@
 A Chrome Manifest V3 extension that uses AI to transliterate Latin text to Persian (Farsi) and generate creative ASCII art. Built with modern web technologies and a dark-mode UI.
 
 ## Website
-- [English](https://cocodedk.github.io/babak-transliterate/)
-- [فارسی (Persian)](https://cocodedk.github.io/babak-transliterate/fa/)
+- [English](https://transliterate.cocode.dk/)
+- [فارسی (Persian)](https://transliterate.cocode.dk/fa/)
 
 ## Features
 - **Transliteration**: Select any Latin text on any webpage, right-click, and convert to Persian instantly
