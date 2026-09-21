@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://cocodedk.github.io/babak-transliterate/sitemap.xml
+Sitemap: https://transliterate.cocode.dk/sitemap.xml
