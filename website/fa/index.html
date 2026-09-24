@@ -63,12 +63,14 @@
   </script>
 
   <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="https://brand.cocode.dk/v1.css">
+  <script type="module" src="https://brand.cocode.dk/v1.js"></script>
 </head>
 <body>
-  <header>
-    <span class="logo">بـ ترانسلیتریت بابک</span>
-    <a href="../" class="lang-switch">English</a>
-  </header>
+  <cocode-head project="ترانسلیتریت بابک" accent="#f59e0b" on-accent="#09090f" dark>
+    <a href="https://cocode.dk">cocode.dk</a>
+    <a href="../" hreflang="en">English</a>
+  </cocode-head>
 
   <main>
     <section class="hero">
@@ -107,7 +109,11 @@
   </main>
 
   <footer>
-    <p>Apache-2.0 &nbsp;|&nbsp; © ۱۴۰۵ <a href="https://cocode.dk" target="_blank" rel="noreferrer">Cocode</a> &nbsp;|&nbsp; ساخته شده توسط <a href="https://linkedin.com/in/babakbandpey" target="_blank" rel="noreferrer">بابک بندپی</a></p>
+    <p>Apache-2.0</p>
   </footer>
+
+  <cocode-foot repo="cocodedk/babak-transliterate" dark>
+    <a href="https://cocode.dk">cocode.dk</a>
+  </cocode-foot>
 </body>
 </html>

@@ -23,25 +23,8 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-header .logo { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
-
-.lang-switch {
-  font-size: 0.875rem;
-  padding: 0.3rem 0.8rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  color: var(--accent);
-}
-.lang-switch:hover { background: var(--accent); color: var(--bg); text-decoration: none; }
+/* The cocode.dk frame lines up with this column; keep the gutters in step. */
+cocode-head, cocode-foot { --cocode-max: 860px; --cocode-gutter: 2rem; }
 
 main { max-width: 860px; margin: 0 auto; padding: 3rem 2rem; }
 
@@ -104,4 +87,3 @@ footer {
 [dir="rtl"] ul li { padding-right: 1.5rem; padding-left: 0; }
 [dir="rtl"] ul li::before { right: 0; left: auto; }
 [dir="rtl"] ol { padding-right: 1.5rem; padding-left: 0; }
-[dir="rtl"] header { flex-direction: row-reverse; }
