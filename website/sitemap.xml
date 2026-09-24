@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://transliterate.cocode.dk/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://transliterate.cocode.dk/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://transliterate.cocode.dk/fa/"/>
+  </url>
+  <url>
+    <loc>https://transliterate.cocode.dk/fa/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://transliterate.cocode.dk/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://transliterate.cocode.dk/fa/"/>
+  </url>
+</urlset>
